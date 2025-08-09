@@ -26,7 +26,7 @@ class Member:
         if score < 10:
             self.fitness = math.floor(lifetime**2) * 2**score
         else:
-            fitness = math.floor(lifetime**2) * 2**10 * (score - 9)
+            self.fitness = math.floor(lifetime**2) * 2**10 * (score - 9)
 
 
 class SnakeAI:
