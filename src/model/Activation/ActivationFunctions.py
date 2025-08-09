@@ -58,3 +58,30 @@ class Sigmoid:
             * self.sigmoid(self.intermediate_value)
             * (1 - self.sigmoid(self.intermediate_value))
         )
+
+
+class SoftMax:
+
+    def __init__(self):
+        self.intermediate_value = None
+        self.intermediate_output = None
+
+    def forward(self, input_tensor):
+        self.intermediate_value = input_tensor
+        x_max = np.max(input_tensor, axis=1, keepdims=True)
+        x_stable = input_tensor - x_max
+        x_exp = np.exp(x_stable)
+        exp_sum = np.sum(x_exp, axis=1, keepdims=True)
+        self.intermediate_output = x_exp / exp_sum
+        return self.intermediate_output
+
+    def backward(self, error_tensor):
+        B, n = error_tensor.shape
+        gradient = np.empty_like(error_tensor)
+
+        for i in range(B):
+            softmax = self.intermediate_output[i]
+            jacobian = np.diag(softmax) - np.outer(softmax, softmax)
+            gradient[i] = np.dot(jacobian, error_tensor[i])
+
+        return gradient
