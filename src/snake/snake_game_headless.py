@@ -148,7 +148,7 @@ class Game:
         return np.array([sensor_data])
 
     def print_board(self):
-        board = [["." for _ in range(self.size)] for _ in range(self.size)]
+        board = [["." for _ in range(self.size+1)] for _ in range(self.size+1)]
 
         if self.food:
             fx, fy = self.food
