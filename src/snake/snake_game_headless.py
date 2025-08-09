@@ -23,6 +23,8 @@ class Game:
         self.direction = Direction.RIGHT
         self.body = [(size // 2, size // 2)]
         self.food = None
+        self.lifetime = 0
+        self.was_food_eaten_this_move = False
         self.game_over = False
 
     def is_head_out_of_bounds(self):
@@ -57,6 +59,8 @@ class Game:
         self.direction = Direction.RIGHT
         self.body = [(self.size // 2, self.size // 2)]
         self.game_over = False
+        self.lifetime = 0
+        self.was_food_eaten_this_move = False
         self.spawn_food()
 
     def evaluate_command(self, command):
@@ -73,6 +77,7 @@ class Game:
 
     def move_and_check_food(self, command):
         self.evaluate_command(command)
+        self.lifetime += 1
         head_x, head_y = self.body[0]
         if self.direction == Direction.LEFT:
             new_head = (head_x - 1, head_y)
@@ -85,7 +90,9 @@ class Game:
         self.body = [new_head] + self.body
         if new_head != self.food:
             self.body.pop()
+            self.was_food_eaten_this_move = False
         else:
+            self.was_food_eaten_this_move = True
             self.spawn_food()
         return self.check_conditions()
 
@@ -97,11 +104,11 @@ class Game:
             Command.TURN_LEFT,
             Command.TURN_RIGHT,
             Command.TURN_UP,
-            Command.TURN_DOWN,
-            Command.KEEP_DIRECTION,
+            Command.TURN_DOWN,  # ,
+            # Command.KEEP_DIRECTION,
         ]
         probs = probs.flatten()
-        idx = np.random.choice(5, p=probs)
+        idx = np.random.choice(4, p=probs)
         return commands[idx]
 
     def get_sensor_data(self):
@@ -117,16 +124,15 @@ class Game:
         ]
 
         head_x, head_y = self.body[0]
-        max_distance = 2 * self.size
         sensor_data = []
 
         for dx, dy in directions:
             distance_to_wall = 0
-            distance_to_tail = max_distance
-            distance_to_food = max_distance
+            is_tail = 0
+            is_food = 0
 
             x, y = head_x, head_y
-            step = 0
+            step = 1
 
             while 0 <= x < self.size and 0 <= y < self.size:
                 x += dx
@@ -134,21 +140,21 @@ class Game:
                 step += 1
 
                 if not (0 <= x < self.size and 0 <= y < self.size):
-                    distance_to_wall = step
+                    distance_to_wall = 1 / step
                     break
 
-                if (x, y) in self.body[1:] and distance_to_tail == max_distance:
-                    distance_to_tail = step
+                if (x, y) in self.body[1:] and is_tail == 0:
+                    is_tail = 1
 
-                if self.food == (x, y) and distance_to_food == max_distance:
-                    distance_to_food = step
+                if self.food == (x, y) and is_food == 0:
+                    is_food = 1
 
-            sensor_data.extend([distance_to_wall, distance_to_tail, distance_to_food])
+            sensor_data.extend([distance_to_wall, is_tail, is_food])
 
         return np.array([sensor_data])
 
     def print_board(self):
-        board = [["." for _ in range(self.size+1)] for _ in range(self.size+1)]
+        board = [["." for _ in range(self.size + 1)] for _ in range(self.size + 1)]
 
         if self.food:
             fx, fy = self.food
