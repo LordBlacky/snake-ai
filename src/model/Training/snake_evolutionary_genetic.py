@@ -29,6 +29,7 @@ class SnakeAI:
         self.epochs = epochs
         self.population_size = 2**population_exponent
         self.population: list[Member] = []
+        self.fitness = [0]
 
     def init_population(self):
         for _ in range(self.population_size):
@@ -44,18 +45,30 @@ class SnakeAI:
     def train(self):
         for epoch in range(self.epochs):
             print("Epoch: ", epoch)
+            mem_num = 0
             for member in self.population:
-                while not member.game.is_game_over():
+                mem_num += 1
+                max_num_of_actions = self.fitness[-1] * 20 + 20
+                num_of_actions = 0
+                while (
+                    not member.game.is_game_over()
+                    and num_of_actions <= max_num_of_actions
+                ):
                     member.game.move_and_check_food(
                         member.game.sample_command_from_distribution(
                             member.network.test(member.game.get_sensor_data())
                         )
                     )
+                    num_of_actions += 1
                     member.game.print_board()
-                    os.system('clear')
+                    print(
+                        f"Epoch: {epoch}, NOA: {num_of_actions} / {max_num_of_actions}, BestFitness: {self.fitness[-1]}, Member: {mem_num} / {self.population_size}"
+                    )
+                    os.system("clear")
                 member.calculate_fitness()
 
             self.population.sort(key=lambda m: m.fitness, reverse=True)
+            self.fitness.append(self.population[0].fitness)
             print("Best Fitness: ", self.population[0].fitness)
             num_survivors = max(1, math.ceil(self.population_size * 0.05))
             survivors = self.population[:num_survivors]
