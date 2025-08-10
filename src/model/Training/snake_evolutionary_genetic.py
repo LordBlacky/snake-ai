@@ -11,6 +11,7 @@ import copy
 import math
 import os
 import time
+import pickle
 
 
 class Member:
@@ -44,11 +45,29 @@ class SnakeAI:
             network = FeedForward(Normal(), GeneticOptimizer(0.05, 0.02), MSE())
             network.append_layer(FullyConnected(24, 18, ReLU()))
             network.append_layer(FullyConnected(18, 18, ReLU()))
-            network.append_layer(FullyConnected(18, 4, ReLU()))
+            network.append_layer(FullyConnected(18, 4, SoftMax()))
             network.initialize()
             game = Game(40)
             game.reset()
             self.population.append(Member(network, game))
+
+    def pre_train_on_data(self, epochs):
+        training_data = None
+        with open("training_data.pkl", "rb") as f:
+            training_data = pickle.load(f)
+        network = self.population[0].network
+        network.optimizer = SGD(0.1)
+        for epoch in range(epochs):
+            print("Epoch:", epoch)
+            for data_point in training_data:
+                network.forward(data_point[0], data_point[1])
+                network.backward()
+                network.update()
+        network.optimizer = GeneticOptimizer(0.05, 0.02)
+        for i in range(self.population_size):
+            print("Init Member: ", i, " / ", self.population_size)
+            self.population[i].network = copy.deepcopy(network)
+            self.population[i].network.update()
 
     def train(self):
         for epoch in range(self.epochs):

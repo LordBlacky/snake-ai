@@ -1,5 +1,23 @@
 import numpy as np
 import enum
+import os
+import pickle
+
+
+import sys
+import tty
+import termios
+
+
+def get_single_key():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())  # Terminal in rohen Modus versetzen
+        ch = sys.stdin.read(1)  # Ein Zeichen lesen
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)  # Terminal zurücksetzen
+    return ch
 
 
 class Direction(enum.Enum):
@@ -26,6 +44,7 @@ class Game:
         self.lifetime = 0
         self.was_food_eaten_this_move = False
         self.game_over = False
+        self.training_data = []
 
     def is_head_out_of_bounds(self):
         x, y = self.body[0]
@@ -108,8 +127,8 @@ class Game:
             # Command.KEEP_DIRECTION,
         ]
         probs = probs.flatten()
-        idx = np.argmax(probs)
-        #idx = np.random.choice(4, p=probs)
+        # idx = np.argmax(probs)
+        idx = np.random.choice(4, p=probs)
         return commands[idx]
 
     def get_sensor_data(self):
@@ -169,3 +188,34 @@ class Game:
 
         for row in board:
             print(" ".join(row))
+
+    def log_training_data(self):
+        try:
+            with open("training_data.pkl", "rb") as f:
+                self.training_data = pickle.load(f)
+        except:
+            pass
+        self.reset()
+        while not self.is_game_over():
+            self.print_board()
+            sensor_input = self.get_sensor_data()
+            keyboard_in = get_single_key()
+            target_output = np.zeros((1, 4))
+
+            if keyboard_in == "w":
+                target_output[0, 0] = 1
+            elif keyboard_in == "s":
+                target_output[0, 1] = 1
+            elif keyboard_in == "a":
+                target_output[0, 2] = 1
+            elif keyboard_in == "d":
+                target_output[0, 3] = 1
+
+            self.move_and_check_food(
+                self.sample_command_from_distribution(target_output)
+            )
+            if not self.is_game_over():
+                self.training_data.append((sensor_input, target_output))
+            os.system("clear")
+        with open("training_data.pkl", "wb") as f:
+            pickle.dump(self.training_data, f)
