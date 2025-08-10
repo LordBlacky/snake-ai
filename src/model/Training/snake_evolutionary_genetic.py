@@ -10,6 +10,7 @@ import numpy as np
 import copy
 import math
 import os
+import time
 
 
 class Member:
@@ -40,10 +41,10 @@ class SnakeAI:
 
     def init_population(self):
         for _ in range(self.population_size):
-            network = FeedForward(Normal(), GeneticOptimizer(0.05, 1), MSE())
+            network = FeedForward(Normal(), GeneticOptimizer(0.05, 0.02), MSE())
             network.append_layer(FullyConnected(24, 18, ReLU()))
             network.append_layer(FullyConnected(18, 18, ReLU()))
-            network.append_layer(FullyConnected(18, 4, SoftMax()))
+            network.append_layer(FullyConnected(18, 4, ReLU()))
             network.initialize()
             game = Game(40)
             game.reset()
@@ -73,6 +74,7 @@ class SnakeAI:
                     print(
                         f"Epoch: {epoch}, life_left: {life_left}, BestFitness: {max(self.fitness)}, BestScore: {max(self.score)}, Member: {mem_num} / {self.population_size}"
                     )
+                    time.sleep(0.05)
                     os.system("clear")
                 member.calculate_fitness()
 
@@ -80,7 +82,7 @@ class SnakeAI:
             self.score.append(self.population[0].game.get_status()[1])
             self.population.sort(key=lambda m: m.fitness, reverse=True)
             self.fitness.append(self.population[0].fitness)
-            num_survivors = max(1, math.ceil(self.population_size * 0.02))
+            num_survivors = max(1, math.ceil(self.population_size * 0.1))
             survivors = self.population[:num_survivors]
             new_population = []
             new_population.extend(survivors)

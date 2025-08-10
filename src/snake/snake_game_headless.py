@@ -66,13 +66,13 @@ class Game:
     def evaluate_command(self, command):
         if command == Command.KEEP_DIRECTION:
             return
-        if command == Command.TURN_LEFT:
+        if command == Command.TURN_LEFT and self.direction != Direction.RIGHT:
             self.direction = Direction.LEFT
-        elif command == Command.TURN_RIGHT:
+        elif command == Command.TURN_RIGHT and self.direction != Direction.LEFT:
             self.direction = Direction.RIGHT
-        elif command == Command.TURN_UP:
+        elif command == Command.TURN_UP and self.direction != Direction.DOWN:
             self.direction = Direction.UP
-        elif command == Command.TURN_DOWN:
+        elif command == Command.TURN_DOWN and self.direction != Direction.UP:
             self.direction = Direction.DOWN
 
     def move_and_check_food(self, command):
@@ -101,14 +101,15 @@ class Game:
 
     def sample_command_from_distribution(self, probs):
         commands = [
-            Command.TURN_LEFT,
-            Command.TURN_RIGHT,
             Command.TURN_UP,
-            Command.TURN_DOWN,  # ,
+            Command.TURN_DOWN,
+            Command.TURN_LEFT,
+            Command.TURN_RIGHT,  # ,
             # Command.KEEP_DIRECTION,
         ]
         probs = probs.flatten()
-        idx = np.random.choice(4, p=probs)
+        idx = np.argmax(probs)
+        #idx = np.random.choice(4, p=probs)
         return commands[idx]
 
     def get_sensor_data(self):
@@ -132,7 +133,7 @@ class Game:
             is_food = 0
 
             x, y = head_x, head_y
-            step = 1
+            step = 0
 
             while 0 <= x < self.size and 0 <= y < self.size:
                 x += dx

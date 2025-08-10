@@ -8,7 +8,8 @@ class Normal:
 
     @staticmethod
     def init_weights(shape):
-        return np.random.standard_normal(shape)
+        #return np.random.standard_normal(shape)
+        return np.random.uniform(-1, 1, shape)
 
     @staticmethod
     def init_bias(shape):

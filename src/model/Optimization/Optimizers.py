@@ -21,4 +21,4 @@ class GeneticOptimizer:
         mutation_noise = np.random.normal(
             0, self.mutation_strength, size=parameter_tensor.shape
         )
-        return parameter_tensor + mutation_noise * mutation_mask
+        return np.clip(parameter_tensor + mutation_noise * mutation_mask, -1, 1)
